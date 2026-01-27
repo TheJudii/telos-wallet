@@ -50,6 +50,13 @@ const RPC_ENDPOINT = {
     port: 443,
     path: '/',
 };
+
+// Fallback RPC endpoints for redundancy
+const FALLBACK_RPC_ENDPOINTS = [
+    { protocol: 'https', host: 'mainnet.telos.net', port: 443, path: '/evm' },
+    { protocol: 'https', host: 'telos.drpc.org', port: 443, path: '/' },
+    { protocol: 'https', host: 'rpc1.us.telos.net', port: 443, path: '/evm' },
+];
 const ESCROW_CONTRACT_ADDRESS = '0x95F5713A1422Aa3FBD3DCB8D553945C128ee3855';
 const API_ENDPOINT = 'https://api.telos.net/v1';
 const WEI_PRECISION = 18;
@@ -81,6 +88,10 @@ export default class TelosEVMTestnet extends EVMChainSettings {
 
     getRPCEndpoint(): RpcEndpoint {
         return RPC_ENDPOINT;
+    }
+
+    getFallbackRPCEndpoints(): RpcEndpoint[] {
+        return FALLBACK_RPC_ENDPOINTS;
     }
 
     getApiEndpoint(): string {

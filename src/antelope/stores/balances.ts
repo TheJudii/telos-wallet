@@ -234,20 +234,30 @@ export const useBalancesStore = defineStore(store_name, {
             }
         },
         async updateSystemBalanceForAccount(label: string, address: addressString): Promise<void> {
+            this.trace('updateSystemBalanceForAccount', label, address);
+            const chain_settings = useChainStore().getChain(label).settings as EVMChainSettings;
+            const sys_token = chain_settings.getSystemToken();
+
+            // Try to get price, but don't fail if it doesn't work
             try {
-                this.trace('updateSystemBalanceForAccount', label, address);
-                const chain_settings = useChainStore().getChain(label).settings as EVMChainSettings;
-                const sys_token = chain_settings.getSystemToken();
                 const price = (await chain_settings.getUsdPrice()).toString();
                 const marketInfo = { price } as MarketSourceInfo;
                 sys_token.market = new TokenMarketData(marketInfo);
+            } catch (priceError) {
+                console.warn('Failed to fetch system token price:', priceError);
+                // Continue without price data
+            }
+
+            // Try to get balance with error handling
+            try {
                 const accountStore = useAccountStore();
                 const authenticator = accountStore.getEVMAuthenticator(label);
                 const balanceBn = await authenticator.getSystemTokenBalance(address);
                 this.processBalanceForToken(label, sys_token, balanceBn);
-            } catch (error) {
-                console.error(error);
-                throw getAntelope().config.transactionError('antelope.evm.error_update_system_balance_failed', error);
+            } catch (balanceError) {
+                console.error('Failed to fetch system token balance:', balanceError);
+                // Don't throw - allow UI to show existing/cached balance or zero
+                // This prevents the entire balance update from failing due to RPC issues
             }
         },
         shouldAddTokenBalance(label: string, balanceBn: BigNumber, token: TokenClass): boolean {
